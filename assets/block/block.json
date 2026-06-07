@@ -1,0 +1,22 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "precision-analytics/popular-posts",
+	"version": "0.1.0",
+	"title": "Popular Posts (Precision Analytics)",
+	"category": "widgets",
+	"icon": "chart-bar",
+	"description": "Your most-read posts from GA4, over a window you choose (e.g. the last 12 hours).",
+	"textdomain": "precision-analytics",
+	"keywords": [ "popular", "analytics", "ga4", "trending" ],
+	"supports": {
+		"html": false,
+		"align": [ "wide" ]
+	},
+	"attributes": {
+		"window": { "type": "string", "default": "7d" },
+		"count": { "type": "number", "default": 5 },
+		"postType": { "type": "string", "default": "" },
+		"showViews": { "type": "boolean", "default": false }
+	}
+}

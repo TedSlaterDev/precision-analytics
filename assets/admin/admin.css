@@ -1,0 +1,141 @@
+/* Precision Analytics — settings UI */
+
+.pa-settings {
+	max-width: 1100px;
+}
+
+.pa-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin: 1rem 0 0.5rem;
+}
+
+.pa-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.pa-mark .dashicons {
+	font-size: 32px;
+	width: 32px;
+	height: 32px;
+	color: #2271b1;
+}
+
+.pa-brand-text h1 {
+	margin: 0;
+	line-height: 1.1;
+}
+
+.pa-tagline {
+	margin: 0.15rem 0 0;
+	color: #646970;
+}
+
+.pa-version {
+	color: #646970;
+	font-variant-numeric: tabular-nums;
+}
+
+.pa-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	border-bottom: 1px solid #c3c4c7;
+	margin: 0.5rem 0 1rem;
+}
+
+.pa-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.6rem 0.9rem;
+	text-decoration: none;
+	color: #50575e;
+	border: 1px solid transparent;
+	border-bottom: none;
+	border-radius: 4px 4px 0 0;
+}
+
+.pa-tab.is-active {
+	background: #fff;
+	color: #1d2327;
+	border-color: #c3c4c7;
+	font-weight: 600;
+}
+
+.pa-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 280px;
+	gap: 1.25rem;
+	align-items: start;
+}
+
+@media (max-width: 960px) {
+	.pa-layout {
+		grid-template-columns: 1fr;
+	}
+}
+
+.pa-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	padding: 1rem 1.25rem;
+}
+
+.pa-intro {
+	color: #50575e;
+	margin-top: 0;
+}
+
+.pa-inline-notice {
+	background: #f6f7f7;
+	border-left: 4px solid #2271b1;
+	padding: 0.6rem 0.8rem;
+	margin: 0.5rem 0;
+}
+
+.pa-roles,
+.pa-register-helper {
+	margin-top: 0.25rem;
+}
+
+.pa-role {
+	display: inline-block;
+	margin: 0 1rem 0.35rem 0;
+}
+
+.pa-register-helper table {
+	margin-top: 0.5rem;
+}
+
+.pa-status {
+	margin: 0;
+}
+
+.pa-status li {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0.3rem 0;
+}
+
+.pa-status .dashicons-yes-alt {
+	color: #00a32a;
+}
+
+.pa-status .dashicons-marker {
+	color: #d63638;
+}
+
+.pa-aside-foot {
+	color: #646970;
+	margin-bottom: 0;
+	margin-top: 1rem;
+}
+
+/* Front-end popular-posts list intentionally unstyled — themes own it. */

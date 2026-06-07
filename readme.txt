@@ -1,0 +1,77 @@
+=== Precision Analytics ===
+Contributors: orchardgrovemedia
+Tags: google analytics, ga4, analytics, custom dimensions, consent mode
+Requires at least: 6.0
+Tested up to: 6.8
+Requires PHP: 8.1
+Stable tag: 0.1.0
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Precise Google Analytics 4 — custom dimensions, traffic sampling, Consent Mode v2, and a cached reporting layer you can reuse anywhere on the site.
+
+== Description ==
+
+Precision Analytics gives you the high-leverage parts of a heavyweight analytics
+plugin — rich custom dimensions, sampling, consent — without the bloat, the
+account broker, or the upsell nags. You bring your own Google credentials; your
+data never passes through anyone else's servers.
+
+**What it does**
+
+* **GA4 tracking** via `gtag.js`, or push everything to the **dataLayer** for
+  Google Tag Manager instead.
+* **Custom dimensions** — send the author, post type, category, post ID, page
+  type, logged-in status, user role, and published year as GA4 event parameters,
+  with a built-in helper that lists the exact names to register in GA4.
+* **Sampling** — track only a percentage of visitors (a global send-rate), with
+  per-segment overrides (e.g. always track `post_type:product`) and exclusions
+  for admins, roles, logged-in users, or specific user IDs. The decision is
+  sticky per visitor, so a session is never split half-tracked.
+* **Consent Mode v2** — emit Google's consent defaults (denied in the EEA by
+  default) and expose a one-call JS hook so any consent banner can grant.
+* **A reusable reporting layer** — a background sync pulls GA4 Data API reports
+  on a schedule and caches them, so a dashboard widget, the `[pa_popular_posts]`
+  shortcode/block, and the `pa_popular_posts()` template tag can all show things
+  like "most popular post in the last 12 hours" with zero per-visitor API calls.
+
+**Privacy & ownership**
+
+No telemetry, no external account service. Reporting authenticates directly to
+Google with your own service account (or, later, OAuth). Credentials can be kept
+out of the database entirely via the `PA_GA4_SERVICE_ACCOUNT_JSON` constant.
+
+== Installation ==
+
+1. Upload the `precision-analytics` folder to `/wp-content/plugins/`.
+2. Activate the plugin through the **Plugins** screen.
+3. Visit **Precision Analytics** in the admin menu, enter your GA4 Measurement
+   ID, and (optionally) configure attributes, sampling, consent, and reporting.
+
+== Frequently Asked Questions ==
+
+= Do I need a Google Cloud project? =
+
+Only for the optional **reporting** layer (reading data back into WordPress).
+Plain tracking just needs your GA4 Measurement ID. For reporting, create a Google
+service account, grant its email Viewer access on your GA4 property, and paste the
+JSON key — no interactive login required.
+
+= Is the "12 hours" data real-time? =
+
+It's near-real-time. The GA4 Data API has some processing latency and today's
+numbers aren't finalized for a day or two, so very recent minutes can lag. For a
+truly live count you'd need GA4's Realtime API, which isn't part of this release.
+
+= Does sampling change GA4's own report sampling? =
+
+No. This sampling controls how many visitors send data at all (to cut volume and
+noise). It is unrelated to the sampling GA4 applies inside its own reports.
+
+== Changelog ==
+
+= 0.1.0 =
+* Initial release: GA4 tracking (gtag.js / GTM dataLayer), custom dimensions,
+  traffic sampling with per-segment rules and exclusions, Consent Mode v2, and a
+  cached GA4 Data API reporting layer feeding a dashboard widget, the
+  `[pa_popular_posts]` shortcode/block, and a `pa_popular_posts()` template tag.
