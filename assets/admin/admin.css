@@ -1,141 +1,203 @@
-/* Precision Analytics — settings UI */
+/* ==========================================================================
+   Precision Analytics — settings UI (Orchard Grove Media design system)
+   ========================================================================== */
 
-.pa-settings {
-	max-width: 1100px;
-}
+.pa-settings { max-width: 1120px; }
 
+/* ---------- Branded header ---------- */
 .pa-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
-	margin: 1rem 0 0.5rem;
+	flex-wrap: wrap;
+	margin: 1rem 0 1rem;
 }
-
 .pa-brand {
 	display: flex;
 	align-items: center;
-	gap: 0.75rem;
+	gap: 0.85rem;
 }
-
+.pa-mark {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 46px;
+	height: 46px;
+	border-radius: 12px;
+	background: #eef4e8;
+	border: 1px solid #d7e6cc;
+	color: #4b7a3f;
+}
 .pa-mark .dashicons {
-	font-size: 32px;
-	width: 32px;
-	height: 32px;
-	color: #2271b1;
+	font-size: 26px;
+	width: 26px;
+	height: 26px;
 }
-
 .pa-brand-text h1 {
 	margin: 0;
-	line-height: 1.1;
+	padding: 0;
+	font-size: 1.5rem;
+	line-height: 1.2;
 }
-
 .pa-tagline {
 	margin: 0.15rem 0 0;
 	color: #646970;
+	font-size: 0.85rem;
 }
-
 .pa-version {
-	color: #646970;
-	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+	font-size: 0.8rem;
+	color: #4b7a3f;
+	background: #eef4e8;
+	border: 1px solid #d7e6cc;
+	border-radius: 999px;
+	padding: 0.2rem 0.7rem;
 }
 
+/* ---------- Tabs ---------- */
 .pa-tabs {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.25rem;
-	border-bottom: 1px solid #c3c4c7;
-	margin: 0.5rem 0 1rem;
+	gap: 0.15rem;
+	margin: 0 0 1.1rem;
+	border-bottom: 1px solid #dcdcde;
 }
-
 .pa-tab {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
 	padding: 0.6rem 0.9rem;
-	text-decoration: none;
 	color: #50575e;
-	border: 1px solid transparent;
-	border-bottom: none;
-	border-radius: 4px 4px 0 0;
+	text-decoration: none;
+	font-weight: 500;
+	border-bottom: 2px solid transparent;
+	border-radius: 8px 8px 0 0;
 }
-
+.pa-tab .dashicons {
+	font-size: 17px;
+	width: 17px;
+	height: 17px;
+}
+.pa-tab:hover { color: #1d2327; background: #f6f7f7; }
 .pa-tab.is-active {
+	color: #2c4f22;
 	background: #fff;
-	color: #1d2327;
-	border-color: #c3c4c7;
-	font-weight: 600;
+	border-bottom-color: #5b8c3e;
+}
+.pa-tab:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(91, 140, 62, 0.35);
 }
 
+/* ---------- Layout + cards ---------- */
 .pa-layout {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) 280px;
+	display: flex;
+	align-items: flex-start;
 	gap: 1.25rem;
-	align-items: start;
 }
-
-@media (max-width: 960px) {
-	.pa-layout {
-		grid-template-columns: 1fr;
-	}
-}
-
+.pa-main { flex: 1 1 auto; min-width: 0; }
+.pa-sidebar { flex: 0 0 280px; }
 .pa-card {
 	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-radius: 6px;
-	padding: 1rem 1.25rem;
+	border: 1px solid #dcdcde;
+	border-radius: 12px;
+	padding: 1.25rem 1.5rem;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	margin: 0 0 1.25rem;
+}
+.pa-intro {
+	color: #646970;
+	margin: 0 0 0.75rem;
+	font-size: 0.92rem;
 }
 
-.pa-intro {
-	color: #50575e;
-	margin-top: 0;
+/* Form table inside the card */
+.pa-card .form-table { margin-top: 0.25rem; }
+.pa-card .form-table th {
+	width: 220px;
+	font-weight: 600;
+	padding: 1rem 1rem 1rem 0;
 }
+.pa-card .form-table td { padding: 0.9rem 0; }
+.pa-card .form-table tr { border-top: 1px solid #f0f0f1; }
+.pa-card .form-table tr:first-child { border-top: none; }
+.pa-card .form-table input[type="text"],
+.pa-card .form-table input[type="url"],
+.pa-card .form-table input[type="number"],
+.pa-card .form-table input[type="password"],
+.pa-card .form-table textarea,
+.pa-card .form-table select {
+	border-radius: 6px;
+}
+.pa-card .form-table input:focus,
+.pa-card .form-table textarea:focus,
+.pa-card .form-table select:focus {
+	border-color: #5b8c3e;
+	box-shadow: 0 0 0 1px #5b8c3e;
+}
+
+/* Brand-green primary button, scoped to our screen */
+.pa-settings .button-primary {
+	background: #5b8c3e;
+	border-color: #4b7a3f;
+	box-shadow: none;
+	text-shadow: none;
+}
+.pa-settings .button-primary:hover,
+.pa-settings .button-primary:focus {
+	background: #4b7a3f;
+	border-color: #2c4f22;
+}
+.pa-settings .button-primary:focus {
+	box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgba(91, 140, 62, 0.5);
+}
+
+.pa-intro { color: #50575e; }
 
 .pa-inline-notice {
-	background: #f6f7f7;
-	border-left: 4px solid #2271b1;
-	padding: 0.6rem 0.8rem;
-	margin: 0.5rem 0;
+	margin: 0 0 0.5rem;
+	padding: 0.7rem 0.9rem;
+	font-size: 0.9rem;
+	color: #5b4d10;
+	background: #fcf9e8;
+	border: 1px solid #f0e6a6;
+	border-left: 4px solid #dba617;
+	border-radius: 6px;
 }
 
 .pa-roles,
-.pa-register-helper {
-	margin-top: 0.25rem;
-}
-
+.pa-register-helper { margin-top: 0.25rem; }
 .pa-role {
 	display: inline-block;
 	margin: 0 1rem 0.35rem 0;
 }
+.pa-register-helper table { margin-top: 0.5rem; }
 
-.pa-register-helper table {
-	margin-top: 0.5rem;
+/* ---------- Sidebar status ---------- */
+.pa-sidebar h2 {
+	margin: 0 0 0.6rem;
+	font-size: 1rem;
 }
-
-.pa-status {
-	margin: 0;
-}
-
+.pa-status { margin: 0; }
 .pa-status li {
 	display: flex;
 	align-items: center;
 	gap: 0.4rem;
 	margin: 0.3rem 0;
 }
-
-.pa-status .dashicons-yes-alt {
-	color: #00a32a;
-}
-
-.pa-status .dashicons-marker {
-	color: #d63638;
-}
-
+.pa-status .dashicons-yes-alt { color: #5b8c3e; }
+.pa-status .dashicons-marker { color: #d63638; }
 .pa-aside-foot {
-	color: #646970;
-	margin-bottom: 0;
-	margin-top: 1rem;
+	color: #8c8f94;
+	margin: 1rem 0 0;
+	font-size: 0.8rem;
+	line-height: 1.6;
+}
+
+@media screen and (max-width: 960px) {
+	.pa-layout { flex-direction: column; }
+	.pa-sidebar { flex-basis: auto; width: 100%; }
 }
 
 /* Front-end popular-posts list intentionally unstyled — themes own it. */

@@ -4,7 +4,7 @@ Tags: google analytics, ga4, analytics, custom dimensions, consent mode
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,11 @@ No. This sampling controls how many visitors send data at all (to cut volume and
 noise). It is unrelated to the sampling GA4 applies inside its own reports.
 
 == Changelog ==
+
+= 0.2.0 =
+* Admin restyle to the Orchard Grove Media design system: branded header (icon
+  mark + version pill), refreshed cards (12px radius, soft shadow), green accent
+  and focus rings, and a refined tab bar. No functional changes.
 
 = 0.1.0 =
 * Initial release: GA4 tracking (gtag.js / GTM dataLayer), custom dimensions,
