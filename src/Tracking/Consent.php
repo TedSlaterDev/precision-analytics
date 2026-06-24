@@ -24,6 +24,14 @@ final class Consent {
 		'SI', 'ES', 'SE', 'IS', 'LI', 'NO', 'GB', 'CH',
 	];
 
+	/** Worldwide "granted" baseline emitted when consent is gated to the EEA only. */
+	private const GRANTED_ALL = [
+		'ad_storage'         => 'granted',
+		'ad_user_data'       => 'granted',
+		'ad_personalization' => 'granted',
+		'analytics_storage'  => 'granted',
+	];
+
 	public function __construct( private Options $options ) {}
 
 	public function enabled(): bool {
@@ -35,14 +43,43 @@ final class Consent {
 	 * Assumes the caller has already defined the `gtag()` shim.
 	 */
 	public function defaultCommandJs(): string {
-		if ( ! $this->enabled() ) {
+		$commands = $this->defaultCommands();
+		if ( ! $commands ) {
 			return '';
+		}
+
+		$js = '';
+		foreach ( $commands as $command ) {
+			$js .= 'gtag("consent","default",' . wp_json_encode( $command ) . ');';
+		}
+		if ( $this->options->bool( 'consent.url_passthrough' ) ) {
+			$js .= 'gtag("set","url_passthrough",true);';
+		}
+		return $js;
+	}
+
+	/**
+	 * The ordered Consent Mode v2 `default` states to emit, or [] when disabled.
+	 *
+	 * With "EEA only" on, a worldwide *granted* baseline is emitted first, then a
+	 * *restricted* override scoped to the EEA/UK/CH region — so visitors outside
+	 * those regions (e.g. the US) are granted by default and tracked without a
+	 * consent banner, while EEA visitors stay gated. A region-scoped default with
+	 * no worldwide baseline (the old behaviour) left non-EEA visitors ungranted
+	 * and silently dropped their hits. With "EEA only" off, the restricted
+	 * defaults apply everywhere until a banner grants consent.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function defaultCommands(): array {
+		if ( ! $this->enabled() ) {
+			return [];
 		}
 
 		$ad        = $this->state( 'consent.ad_default' );
 		$analytics = $this->state( 'consent.analytics_default' );
 
-		$state = [
+		$restricted = [
 			'ad_storage'         => $ad,
 			'ad_user_data'       => $ad,
 			'ad_personalization' => $ad,
@@ -51,21 +88,20 @@ final class Consent {
 		];
 
 		if ( $this->options->bool( 'consent.eea_only' ) ) {
-			$state['region'] = self::REGIONS;
+			$restricted['region'] = self::REGIONS;
+			$commands             = [ self::GRANTED_ALL, $restricted ];
+		} else {
+			$commands = [ $restricted ];
 		}
 
 		/**
-		 * Filter the Consent Mode v2 default state before output.
+		 * Filter the ordered Consent Mode v2 default states before output. Each
+		 * entry is the object passed to a `gtag('consent','default', …)` call,
+		 * applied in order (later region-scoped states override earlier ones).
 		 *
-		 * @param array<string,mixed> $state
+		 * @param array<int,array<string,mixed>> $commands
 		 */
-		$state = apply_filters( 'precision_analytics/consent_defaults', $state );
-
-		$js = 'gtag("consent","default",' . wp_json_encode( $state ) . ');';
-		if ( $this->options->bool( 'consent.url_passthrough' ) ) {
-			$js .= 'gtag("set","url_passthrough",true);';
-		}
-		return $js;
+		return apply_filters( 'precision_analytics/consent_defaults', $commands );
 	}
 
 	/**

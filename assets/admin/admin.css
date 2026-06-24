@@ -166,6 +166,15 @@
 	border-radius: 6px;
 }
 
+/* Green "recommendation" variant (used with .pa-inline-notice) */
+.pa-callout {
+	color: #2c4f22;
+	background: #eef4e8;
+	border: 1px solid #d7e6cc;
+	border-left: 4px solid #5b8c3e;
+}
+.pa-callout strong { color: #2c4f22; }
+
 .pa-roles,
 .pa-register-helper { margin-top: 0.25rem; }
 .pa-role {

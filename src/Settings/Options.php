@@ -53,10 +53,13 @@ final class Options {
 				'rules'             => '',              // One per line: attribute:value:rate.
 			],
 			'consent'    => [
-				'enabled'           => true,            // Emit Consent Mode v2 defaults.
-				'analytics_default' => 'denied',        // 'granted' | 'denied'.
+				// Off by default: built for US sites/audiences, where GA4 should
+				// collect from everyone. Turn on only for EEA/UK/CH visitors with
+				// a consent banner. When on, "EEA only" keeps US visitors tracked.
+				'enabled'           => false,           // Emit Consent Mode v2 defaults.
+				'analytics_default' => 'denied',        // 'granted' | 'denied' (EEA default when on).
 				'ad_default'        => 'denied',
-				'eea_only'          => true,            // Apply denied defaults to EEA only.
+				'eea_only'          => true,            // Restrict denied defaults to the EEA; grant elsewhere.
 				'url_passthrough'   => true,
 				'wait_for_update'   => 500,             // ms before the tag gives up waiting.
 			],

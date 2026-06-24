@@ -27,7 +27,8 @@ final class OptionsTest extends TestCase {
 		$this->assertSame( 'G-ABC123', $options->str( 'general.measurement_id' ) );
 		// Deep merge keeps untouched defaults from the same and other branches.
 		$this->assertSame( 'gtag', $options->str( 'general.transport' ) );
-		$this->assertTrue( $options->bool( 'consent.enabled' ) );
+		// Consent Mode ships off (US-first default); the sibling branch survives the merge.
+		$this->assertFalse( $options->bool( 'consent.enabled' ) );
 	}
 
 	public function testListFieldReplacesRatherThanIndexMerges(): void {

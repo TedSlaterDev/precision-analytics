@@ -4,7 +4,7 @@ Tags: google analytics, ga4, analytics, custom dimensions, consent mode
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,15 @@ No. This sampling controls how many visitors send data at all (to cut volume and
 noise). It is unrelated to the sampling GA4 applies inside its own reports.
 
 == Changelog ==
+
+= 0.3.0 =
+* Consent Mode v2 is now **off by default** — built for US sites/audiences, GA4
+  collects from everyone out of the box.
+* Fixed "EEA only": it now emits a worldwide *granted* default before the
+  EEA-scoped *denied* override, so non-EEA visitors (e.g. the US) are tracked
+  without a consent banner. Previously a region-scoped denial with no worldwide
+  baseline silently dropped non-EEA hits.
+* Rewrote the Consent tab with a US-guidance callout and clearer per-option help.
 
 = 0.2.0 =
 * Admin restyle to the Orchard Grove Media design system: branded header (icon

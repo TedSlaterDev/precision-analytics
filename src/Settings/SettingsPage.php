@@ -163,7 +163,7 @@ final class SettingsPage implements ModuleInterface {
 			'general'    => __( 'Your GA4 Measurement ID and how the tag is delivered — directly via gtag.js, or pushed to the GTM dataLayer.', 'precision-analytics' ),
 			'attributes' => __( 'Choose which post and visitor facts to send as GA4 custom dimensions. Register the listed parameter names in GA4 to report on them.', 'precision-analytics' ),
 			'sampling'   => __( 'Track a percentage of visitors, override the rate for specific segments, and exclude staff. Unrelated to GA4’s own report sampling.', 'precision-analytics' ),
-			'consent'    => __( 'Google Consent Mode v2 defaults. A consent banner can grant consent by calling window.precisionAnalytics.updateConsent().', 'precision-analytics' ),
+			'consent'    => __( 'Google Consent Mode v2 — a GDPR feature for EEA/UK/Swiss visitors. US sites should leave it off (the default) so GA4 collects from everyone.', 'precision-analytics' ),
 			'reporting'  => __( 'Read data back into WordPress on a schedule with your own Google credentials, for the dashboard widget, [pa_popular_posts], and the block.', 'precision-analytics' ),
 			'advanced'   => __( 'Optional client-side events and uninstall behavior.', 'precision-analytics' ),
 		];
@@ -247,14 +247,16 @@ final class SettingsPage implements ModuleInterface {
 				break;
 
 			case 'consent':
-				$this->checkboxRow( __( 'Enable Consent Mode v2', 'precision-analytics' ), 'consent.enabled', __( 'Emit Google consent defaults before the tag loads', 'precision-analytics' ) );
+				echo '<tr><td colspan="2"><div class="pa-inline-notice pa-callout"><strong>' . esc_html__( 'US sites: leave this OFF.', 'precision-analytics' ) . '</strong> ' . esc_html__( 'Consent Mode is a GDPR feature for EEA/UK/Swiss visitors and only helps alongside a cookie-consent banner. With it off, GA4 collects from everyone — the right setup for a US audience, and the default. Turn it on only if you serve EEA visitors and have a banner that grants consent.', 'precision-analytics' ) . '</div></td></tr>';
+					$this->checkboxRow( __( 'Enable Consent Mode v2', 'precision-analytics' ), 'consent.enabled', __( 'Leave OFF for a US audience. When ON, analytics/cookies are withheld until consent is granted — for EEA/UK/CH visitors only, as long as “EEA only” below stays checked.', 'precision-analytics' ) );
+					$this->help( __( 'The settings below take effect only when Consent Mode is enabled.', 'precision-analytics' ) );
 				$this->selectRow( __( 'Analytics storage default', 'precision-analytics' ), 'consent.analytics_default', $this->grantedDeniedChoices() );
 				$this->selectRow( __( 'Ads storage default', 'precision-analytics' ), 'consent.ad_default', $this->grantedDeniedChoices() );
-				$this->checkboxRow( __( 'EEA only', 'precision-analytics' ), 'consent.eea_only', __( 'Apply the denied defaults to EEA/UK/CH visitors only (granted elsewhere)', 'precision-analytics' ) );
-				$this->checkboxRow( __( 'URL passthrough', 'precision-analytics' ), 'consent.url_passthrough', __( 'Preserve ad-click info across pages while consent is denied', 'precision-analytics' ) );
-				$this->inputRow( __( 'Wait for update (ms)', 'precision-analytics' ), 'consent.wait_for_update', 'number', '500', __( 'How long the tag waits for a consent decision before proceeding.', 'precision-analytics' ) );
+				$this->checkboxRow( __( 'EEA only (recommended)', 'precision-analytics' ), 'consent.eea_only', __( 'Keep this checked. Grants consent worldwide (including the US) and applies the denied defaults to EEA/UK/CH visitors only. Unchecking it denies everyone — including your US audience — until a banner grants consent.', 'precision-analytics' ) );
+				$this->checkboxRow( __( 'URL passthrough', 'precision-analytics' ), 'consent.url_passthrough', __( 'Preserve ad-click info across pages while consent is denied. Harmless to leave on.', 'precision-analytics' ) );
+				$this->inputRow( __( 'Wait for update (ms)', 'precision-analytics' ), 'consent.wait_for_update', 'number', '500', __( 'How long the tag waits for a consent decision before proceeding. 500 is typical.', 'precision-analytics' ) );
 				echo '<tr><td colspan="2"><div class="pa-inline-notice">'
-					. esc_html__( 'Your consent banner should call window.precisionAnalytics.updateConsent({analytics_storage:"granted", ad_storage:"granted"}) after the visitor accepts.', 'precision-analytics' )
+					. esc_html__( 'Only relevant when Consent Mode is on: your cookie banner must call window.precisionAnalytics.updateConsent({analytics_storage:"granted", ad_storage:"granted"}) after the visitor accepts — otherwise EEA visitors are never counted.', 'precision-analytics' )
 					. '</div></td></tr>';
 				break;
 
