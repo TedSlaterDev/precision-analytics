@@ -32,7 +32,7 @@ final class Gtag {
 		$js .= $this->consent->updateHelperJs();
 		$js .= 'gtag("js",new Date());';
 		$js .= 'gtag("config",' . wp_json_encode( $measurement_id )
-			. ',' . wp_json_encode( $config, JSON_HEX_TAG | JSON_HEX_AMP ) . ');';
+			. ',' . self::configJson( $config ) . ');';
 
 		wp_print_script_tag(
 			[
@@ -42,5 +42,19 @@ final class Gtag {
 			]
 		);
 		wp_print_inline_script_tag( $js, [ 'id' => 'precision-analytics-gtag' ] );
+	}
+
+	/**
+	 * Encode the gtag config parameters as a JSON object — never a JSON array.
+	 *
+	 * `gtag('config', id, [])` is silently ignored by GA4 and sends no page_view,
+	 * so an empty parameter set (e.g. on the homepage, where no post-scoped
+	 * dimension resolves) must serialise to `{}`, not `[]`. Casting to object
+	 * also guarantees an object regardless of the map's PHP key shape.
+	 *
+	 * @param array<string,string> $config
+	 */
+	public static function configJson( array $config ): string {
+		return (string) wp_json_encode( (object) $config, JSON_HEX_TAG | JSON_HEX_AMP );
 	}
 }

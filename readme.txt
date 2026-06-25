@@ -4,7 +4,7 @@ Tags: google analytics, ga4, analytics, custom dimensions, consent mode
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,11 @@ No. This sampling controls how many visitors send data at all (to cut volume and
 noise). It is unrelated to the sampling GA4 applies inside its own reports.
 
 == Changelog ==
+
+= 0.3.1 =
+* **Fixed tracking on pages with no custom dimensions (e.g. the homepage):** the
+  tag emitted `gtag('config', id, [])`, which GA4 silently ignores — no pageview
+  was sent. Config parameters now always serialise as a JSON object (`{}`).
 
 = 0.3.0 =
 * Consent Mode v2 is now **off by default** — built for US sites/audiences, GA4
