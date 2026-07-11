@@ -78,8 +78,8 @@ noise). It is unrelated to the sampling GA4 applies inside its own reports.
 = 0.3.0 =
 * Consent Mode v2 is now **off by default** — built for US sites/audiences, GA4
   collects from everyone out of the box.
-* Fixed "EEA only": it now emits a worldwide *granted* default before the
-  EEA-scoped *denied* override, so non-EEA visitors (e.g. the US) are tracked
+* Fixed "EEA only": it now emits a worldwide `granted` default before the
+  EEA-scoped `denied` override, so non-EEA visitors (e.g. the US) are tracked
   without a consent banner. Previously a region-scoped denial with no worldwide
   baseline silently dropped non-EEA hits.
 * Rewrote the Consent tab with a US-guidance callout and clearer per-option help.
