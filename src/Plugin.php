@@ -4,6 +4,7 @@ declare( strict_types=1 );
 namespace OrchardGrove\PrecisionAnalytics;
 
 use OrchardGrove\PrecisionAnalytics\Cli\Commands;
+use OrchardGrove\PrecisionAnalytics\Reporting\Cache;
 use OrchardGrove\PrecisionAnalytics\Reporting\Reporting;
 use OrchardGrove\PrecisionAnalytics\Reporting\Sync;
 use OrchardGrove\PrecisionAnalytics\Settings\Options;
@@ -70,10 +71,13 @@ final class Plugin {
 			Commands::register();
 		}
 
-		// On version change, keep the sync schedule current (interval may have changed).
+		// On version change, keep the sync schedule current (interval may have
+		// changed) and drop cached reports — key formats can change between
+		// versions, and the cron re-warms everything within one interval.
 		if ( get_option( self::VERSION_OPTION ) !== PRECISION_ANALYTICS_VERSION ) {
 			update_option( self::VERSION_OPTION, PRECISION_ANALYTICS_VERSION );
 			Sync::reschedule();
+			Cache::clear();
 		}
 	}
 

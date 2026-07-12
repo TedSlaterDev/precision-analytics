@@ -4,7 +4,7 @@ Tags: google analytics, ga4, analytics, custom dimensions, consent mode
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.3.1
+Stable tag: 0.4.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,25 @@ No. This sampling controls how many visitors send data at all (to cut volume and
 noise). It is unrelated to the sampling GA4 applies inside its own reports.
 
 == Changelog ==
+
+= 0.4.0 =
+* **Reporting cache hardening.** Popular-posts windows you actually use (e.g.
+  `window="48h"`) are now remembered and kept fresh by the scheduled sync —
+  previously only the four standard windows were refreshed, so other lists were
+  fetched once and then went permanently stale.
+* Cache keys are now per window only: `post_type` filtering happens at read
+  time, so filtered lists no longer trigger duplicate GA4 API calls or store
+  duplicate payloads.
+* Window inputs are canonicalized (`48H` → `48h`; unparseable values fall back
+  to `7d`), so typo'd shortcode attributes can't mint junk cache entries.
+* GA4 API errors are negative-cached (default 60s, filter
+  `precision_analytics/error_retry_delay`), and the retry window is armed
+  **before** a live fetch — so an outage or a cold cache can't stampede Google
+  with one blocking call per page view.
+* Stored rankings are capped at 500 rows per window to keep the cache option
+  lean, and cached reports are cleared once on upgrade (the sync re-warms them
+  within one interval).
+* Uninstall now also removes the cached reports and the window registry.
 
 = 0.3.1 =
 * **Fixed tracking on pages with no custom dimensions (e.g. the homepage):** the

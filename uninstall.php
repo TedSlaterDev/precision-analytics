@@ -16,6 +16,8 @@ if ( ! is_array( $precision_analytics_option ) || empty( $precision_analytics_op
 
 delete_option( 'precision_analytics' );
 delete_option( 'precision_analytics_version' );
+delete_option( 'precision_analytics_reports' );
+delete_option( 'precision_analytics_signatures' );
 
 wp_clear_scheduled_hook( 'precision_analytics_sync' );
 
