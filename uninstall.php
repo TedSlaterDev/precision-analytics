@@ -18,6 +18,7 @@ delete_option( 'precision_analytics' );
 delete_option( 'precision_analytics_version' );
 delete_option( 'precision_analytics_reports' );
 delete_option( 'precision_analytics_signatures' );
+delete_option( 'precision_analytics_oauth' );
 
 wp_clear_scheduled_hook( 'precision_analytics_sync' );
 

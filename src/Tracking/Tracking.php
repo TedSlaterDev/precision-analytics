@@ -52,13 +52,14 @@ final class Tracking implements ModuleInterface {
 			return;
 		}
 
-		$params = $this->dimensions->collect( $context );
+		$scoped = $this->dimensions->collectScoped( $context );
 
 		if ( 'gtm' === $transport ) {
-			( new DataLayer( $this->consent ) )->render( $id, $params );
+			// GTM users map scopes themselves — push everything flat.
+			( new DataLayer( $this->consent ) )->render( $id, array_merge( $scoped['event'], $scoped['user'] ) );
 			$this->renderedGtm = true;
 		} else {
-			( new Gtag( $this->options, $this->consent ) )->render( $id, $params );
+			( new Gtag( $this->options, $this->consent ) )->render( $id, $scoped['event'], $scoped['user'] );
 		}
 	}
 

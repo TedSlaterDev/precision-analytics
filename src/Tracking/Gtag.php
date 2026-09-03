@@ -19,13 +19,11 @@ final class Gtag {
 	) {}
 
 	/**
-	 * @param array<string,string> $params Resolved dimension parameter map.
+	 * @param array<string,string> $params          Event-scoped parameter map.
+	 * @param array<string,string> $user_properties User-scoped values (GA4 user properties).
 	 */
-	public function render( string $measurement_id, array $params ): void {
-		$config = $params;
-		if ( $this->options->bool( 'general.debug_mode' ) ) {
-			$config = array_merge( [ 'debug_mode' => true ], $config );
-		}
+	public function render( string $measurement_id, array $params, array $user_properties = [] ): void {
+		$config = self::config( $params, $user_properties, $this->options->bool( 'general.debug_mode' ) );
 
 		$js  = 'window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}';
 		$js .= $this->consent->defaultCommandJs();
@@ -42,6 +40,27 @@ final class Gtag {
 			]
 		);
 		wp_print_inline_script_tag( $js, [ 'id' => 'precision-analytics-gtag' ] );
+	}
+
+	/**
+	 * The gtag config object: event parameters at the top level, user-scoped
+	 * values under `user_properties` (GA4 populates user-scoped custom
+	 * dimensions only from user properties — as an event parameter they stay
+	 * "(not set)"), and debug_mode first when enabled.
+	 *
+	 * @param array<string,string> $params
+	 * @param array<string,string> $user_properties
+	 * @return array<string,mixed>
+	 */
+	public static function config( array $params, array $user_properties, bool $debug ): array {
+		$config = $params;
+		if ( $user_properties ) {
+			$config['user_properties'] = (object) $user_properties;
+		}
+		if ( $debug ) {
+			$config = array_merge( [ 'debug_mode' => true ], $config );
+		}
+		return $config;
 	}
 
 	/**

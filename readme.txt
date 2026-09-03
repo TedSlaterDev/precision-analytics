@@ -4,7 +4,7 @@ Tags: google analytics, ga4, analytics, custom dimensions, consent mode
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,8 +38,10 @@ data never passes through anyone else's servers.
 **Privacy & ownership**
 
 No telemetry, no external account service. Reporting authenticates directly to
-Google with your own service account (or, later, OAuth). Credentials can be kept
-out of the database entirely via the `PA_GA4_SERVICE_ACCOUNT_JSON` constant.
+Google — either **Sign in with Google (OAuth)** using your own Google Cloud OAuth
+client, or a service-account key. Credentials can be kept out of the database
+entirely via the `PA_GA4_SERVICE_ACCOUNT_JSON`, `PA_GA4_OAUTH_CLIENT_ID`, and
+`PA_GA4_OAUTH_CLIENT_SECRET` constants.
 
 == Installation ==
 
@@ -53,9 +55,11 @@ out of the database entirely via the `PA_GA4_SERVICE_ACCOUNT_JSON` constant.
 = Do I need a Google Cloud project? =
 
 Only for the optional **reporting** layer (reading data back into WordPress).
-Plain tracking just needs your GA4 Measurement ID. For reporting, create a Google
-service account, grant its email Viewer access on your GA4 property, and paste the
-JSON key — no interactive login required.
+Plain tracking just needs your GA4 Measurement ID. For reporting you choose one of
+two methods, both using your own Google project — nothing is brokered through us:
+**Sign in with Google (OAuth)**, where you create an OAuth client and click
+Connect; or a **service account**, where you grant its email Viewer access on the
+GA4 property and paste the JSON key (no interactive login required).
 
 = Is the "12 hours" data real-time? =
 
@@ -69,6 +73,34 @@ No. This sampling controls how many visitors send data at all (to cut volume and
 noise). It is unrelated to the sampling GA4 applies inside its own reports.
 
 == Changelog ==
+
+= 0.5.1 =
+* Fixed the Reporting tab's Authentication dropdown still labelling OAuth
+  "coming soon" — it now reads "Sign in with Google (OAuth)". Cosmetic only;
+  the option worked in 0.5.0.
+
+= 0.5.0 =
+* **Sign in with Google (OAuth)** is now a real option on the Reporting tab —
+  no service-account JSON required. You create an OAuth client in your own
+  Google Cloud project (the tab shows the exact redirect URI to paste), click
+  **Connect Google Analytics**, and approve access. There is no third-party
+  broker: the refresh token is stored on your own site and can be revoked with
+  **Disconnect**.
+* The client ID and secret can be kept out of the database entirely via the
+  `PA_GA4_OAUTH_CLIENT_ID` / `PA_GA4_OAUTH_CLIENT_SECRET` constants, and the
+  secret field is write-only (its stored value is never rendered into the page).
+* Uninstall now also removes the stored OAuth tokens.
+
+= 0.4.1 =
+* Attributes tab: every attribute now has an optional **GA4 parameter name**
+  override, so a site can keep an existing dimension flowing under its old name
+  — e.g. send the author as MonsterInsights' `author` instead of `post_author`
+  — with no reporting gap. Names are validated against GA4's rules (letters,
+  digits, underscores; no reserved prefixes; 40 chars max).
+* Fixed: user-scoped attributes (logged-in status, user role) were sent as event
+  parameters, so a *user-scoped* GA4 dimension registered for them — as the
+  plugin's own helper instructs — stayed "(not set)". They are now delivered as
+  GA4 user properties.
 
 = 0.4.0 =
 * **Reporting cache hardening.** Popular-posts windows you actually use (e.g.

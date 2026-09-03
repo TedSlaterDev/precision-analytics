@@ -43,6 +43,9 @@ final class Options {
 				'logged_in'      => true,
 				'user_role'      => false,
 				'published_year' => false,
+				// Optional per-attribute GA4 parameter-name overrides (key => name),
+				// e.g. author => 'author' to keep a MonsterInsights dimension flowing.
+				'params'         => [],
 			],
 			'sampling'   => [
 				'enabled'           => false,           // Off = track every visitor.
@@ -68,6 +71,8 @@ final class Options {
 				'property_id'          => '',                 // GA4 numeric property ID.
 				'auth_method'          => 'service_account',  // 'service_account' | 'oauth'.
 				'service_account_json' => '',                 // Or PA_GA4_SERVICE_ACCOUNT_JSON constant.
+				'oauth_client_id'      => '',                 // Or PA_GA4_OAUTH_CLIENT_ID constant.
+				'oauth_client_secret'  => '',                 // Or PA_GA4_OAUTH_CLIENT_SECRET constant.
 				'sync_interval'        => 900,                // Seconds between cron syncs.
 				'widget_enabled'       => true,
 			],

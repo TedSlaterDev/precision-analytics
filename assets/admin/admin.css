@@ -177,6 +177,13 @@
 
 .pa-roles,
 .pa-register-helper { margin-top: 0.25rem; }
+.pa-param {
+	width: 220px;
+	max-width: 100%;
+	margin: 0 0.35rem;
+	font-family: Menlo, Consolas, monospace;
+	font-size: 0.85rem;
+}
 .pa-role {
 	display: inline-block;
 	margin: 0 1rem 0.35rem 0;

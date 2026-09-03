@@ -4,6 +4,7 @@ declare( strict_types=1 );
 namespace OrchardGrove\PrecisionAnalytics\Settings;
 
 use OrchardGrove\PrecisionAnalytics\ModuleInterface;
+use OrchardGrove\PrecisionAnalytics\Reporting\Auth\OAuthAuth;
 use OrchardGrove\PrecisionAnalytics\Reporting\Auth\ServiceAccountAuth;
 use OrchardGrove\PrecisionAnalytics\Reporting\Reports;
 use OrchardGrove\PrecisionAnalytics\Reporting\Sync;
@@ -41,6 +42,9 @@ final class SettingsPage implements ModuleInterface {
 		add_action( 'admin_enqueue_scripts', [ $this, 'assets' ] );
 		add_action( 'admin_post_precision_analytics_sync_now', [ $this, 'handleSyncNow' ] );
 		add_action( 'admin_post_precision_analytics_test', [ $this, 'handleTest' ] );
+		add_action( 'admin_post_precision_analytics_oauth_connect', [ $this, 'handleOauthConnect' ] );
+		add_action( 'admin_post_precision_analytics_oauth_callback', [ $this, 'handleOauthCallback' ] );
+		add_action( 'admin_post_precision_analytics_oauth_disconnect', [ $this, 'handleOauthDisconnect' ] );
 		add_filter( 'plugin_action_links_' . PRECISION_ANALYTICS_BASENAME, [ $this, 'actionLinks' ] );
 	}
 
@@ -223,10 +227,13 @@ final class SettingsPage implements ModuleInterface {
 
 			case 'attributes':
 				foreach ( Dimensions::REGISTRY as $key => $meta ) {
-					/* translators: 1: GA4 parameter name, 2: dimension scope (event or user). */
-					$help = sprintf( __( 'Send as %1$s (%2$s-scoped)', 'precision-analytics' ), $meta['param'], $meta['scope'] );
-					$this->checkboxRow( $meta['label'], "attributes.$key", $help );
+					$this->attributeRow( $key, $meta );
 				}
+				echo '<tr><td colspan="2"><div class="pa-inline-notice pa-callout"><strong>'
+					. esc_html__( 'Switching from MonsterInsights?', 'precision-analytics' ) . '</strong> '
+					. esc_html__( 'Leave a name blank to use the default shown, or type the name an existing GA4 dimension already uses so its history continues without a gap. MonsterInsights registered:', 'precision-analytics' )
+					. ' <code>' . esc_html( implode( '</code>, <code>', array_map( 'esc_html', Dimensions::MONSTERINSIGHTS_NAMES ) ) ) . '</code>.'
+					. '</div></td></tr>';
 				$this->registerHelper();
 				break;
 
@@ -264,10 +271,11 @@ final class SettingsPage implements ModuleInterface {
 				$this->checkboxRow( __( 'Enable reporting', 'precision-analytics' ), 'reporting.enabled', __( 'Fetch GA4 data into WordPress on a schedule', 'precision-analytics' ) );
 				$this->selectRow( __( 'Authentication', 'precision-analytics' ), 'reporting.auth_method', [
 					'service_account' => __( 'Service account (JSON key)', 'precision-analytics' ),
-					'oauth'           => __( 'OAuth (coming soon)', 'precision-analytics' ),
+					'oauth'           => __( 'Sign in with Google (OAuth)', 'precision-analytics' ),
 				] );
 				$this->inputRow( __( 'GA4 property ID', 'precision-analytics' ), 'reporting.property_id', 'text', '123456789', __( 'The numeric Property ID (Admin → Property settings), not the G- Measurement ID.', 'precision-analytics' ) );
 				$this->serviceAccountRow();
+				$this->oauthRows();
 				$this->inputRow( __( 'Sync interval (seconds)', 'precision-analytics' ), 'reporting.sync_interval', 'number', '900', __( 'Minimum 300. Lower = fresher data, more API calls.', 'precision-analytics' ) );
 				$this->checkboxRow( __( 'Dashboard widget', 'precision-analytics' ), 'reporting.widget_enabled', __( 'Show the summary widget on the WordPress dashboard', 'precision-analytics' ) );
 				break;
@@ -293,13 +301,41 @@ final class SettingsPage implements ModuleInterface {
 			. esc_html__( 'Admin → Custom definitions → Create custom dimension, using the parameter name and scope below.', 'precision-analytics' ) . '</p>';
 		echo '<table class="widefat striped"><thead><tr><th>' . esc_html__( 'Attribute', 'precision-analytics' ) . '</th><th>'
 			. esc_html__( 'Parameter name', 'precision-analytics' ) . '</th><th>' . esc_html__( 'Scope', 'precision-analytics' ) . '</th></tr></thead><tbody>';
+		$dimensions = new Dimensions( $this->options );
 		foreach ( Dimensions::REGISTRY as $key => $meta ) {
 			if ( ! $this->options->bool( "attributes.$key" ) ) {
 				continue;
 			}
-			echo '<tr><td>' . esc_html( $meta['label'] ) . '</td><td><code>' . esc_html( $meta['param'] ) . '</code></td><td>' . esc_html( $meta['scope'] ) . '</td></tr>';
+			echo '<tr><td>' . esc_html( $meta['label'] ) . '</td><td><code>' . esc_html( $dimensions->paramName( $key ) ) . '</code></td><td>' . esc_html( $meta['scope'] ) . '</td></tr>';
 		}
 		echo '</tbody></table></div></td></tr>';
+	}
+
+	/**
+	 * One attribute: its on/off checkbox plus an optional GA4 parameter-name
+	 * override (blank = the registry default, shown as the placeholder).
+	 *
+	 * @param array{param:string,scope:string,label:string} $meta
+	 */
+	private function attributeRow( string $key, array $meta ): void {
+		$path   = "attributes.$key";
+		$id     = $this->id( $path );
+		$name   = $this->name( $path );
+		$p_path = "attributes.params.$key";
+		$scope  = 'user' === $meta['scope']
+			? __( 'user property', 'precision-analytics' )
+			: __( 'event parameter', 'precision-analytics' );
+
+		echo '<tr><th scope="row">' . esc_html( $meta['label'] ) . '</th><td>';
+		echo '<label for="' . esc_attr( $id ) . '">';
+		echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="0" />';
+		echo '<input type="checkbox" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="1" ' . checked( $this->options->bool( $path ), true, false ) . ' /> ';
+		echo esc_html__( 'Send as', 'precision-analytics' ) . '</label> ';
+		echo '<input type="text" id="' . esc_attr( $this->id( $p_path ) ) . '" name="' . esc_attr( $this->name( $p_path ) ) . '" value="' . esc_attr( $this->options->str( $p_path ) ) . '" placeholder="' . esc_attr( $meta['param'] ) . '" class="code pa-param" maxlength="40" pattern="[A-Za-z][A-Za-z0-9_]{0,39}" aria-label="'
+			/* translators: %s: attribute label. */
+			. esc_attr( sprintf( __( 'GA4 parameter name for %s', 'precision-analytics' ), $meta['label'] ) ) . '" /> ';
+		echo '<span class="description">(' . esc_html( $scope ) . ')</span>';
+		echo '</td></tr>';
 	}
 
 	private function rolesRow(): void {
@@ -388,10 +424,20 @@ final class SettingsPage implements ModuleInterface {
 
 		$merged = $this->mergeDeep( $current, $clean );
 
+		// A blank secret means "unchanged" — never wipe it on an ordinary save.
+		if ( isset( $clean['reporting']['oauth_client_secret'] ) && '' === $clean['reporting']['oauth_client_secret'] ) {
+			unset( $clean['reporting']['oauth_client_secret'] );
+		}
+
 		// React to credential / interval changes.
 		$key_changed = ( $current['reporting']['service_account_json'] ?? '' ) !== ( $merged['reporting']['service_account_json'] ?? '' );
 		if ( $key_changed ) {
 			ServiceAccountAuth::forgetToken();
+		}
+		$client_changed = ( $current['reporting']['oauth_client_id'] ?? '' ) !== ( $merged['reporting']['oauth_client_id'] ?? '' )
+			|| ( $current['reporting']['oauth_client_secret'] ?? '' ) !== ( $merged['reporting']['oauth_client_secret'] ?? '' );
+		if ( $client_changed ) {
+			OAuthAuth::forgetToken();
 		}
 		if ( ( $current['reporting']['sync_interval'] ?? 0 ) !== ( $merged['reporting']['sync_interval'] ?? 0 ) ) {
 			Sync::reschedule();
@@ -422,6 +468,8 @@ final class SettingsPage implements ModuleInterface {
 			'reporting.property_id'            => 'text',
 			'reporting.auth_method'            => 'enum:service_account,oauth',
 			'reporting.service_account_json'   => 'json',
+			'reporting.oauth_client_id'        => 'text',
+			'reporting.oauth_client_secret'    => 'text',
 			'reporting.sync_interval'          => 'intrange:300:86400',
 			'reporting.widget_enabled'         => 'bool',
 			'events.enabled'                   => 'bool',
@@ -432,7 +480,8 @@ final class SettingsPage implements ModuleInterface {
 		];
 
 		foreach ( array_keys( Dimensions::REGISTRY ) as $key ) {
-			$schema[ "attributes.$key" ] = 'bool';
+			$schema[ "attributes.$key" ]        = 'bool';
+			$schema[ "attributes.params.$key" ] = 'param';
 		}
 
 		return $schema;
@@ -452,6 +501,7 @@ final class SettingsPage implements ModuleInterface {
 		return match ( $type ) {
 			'textarea' => sanitize_textarea_field( (string) $raw ),
 			'json'     => $this->sanitizeJson( (string) $raw ),
+			'param'    => Dimensions::sanitizeParam( (string) $raw ), // '' = use the default name.
 			'bool'     => (bool) $raw,
 			'int'      => (int) $raw,
 			default    => sanitize_text_field( (string) $raw ),
@@ -528,13 +578,17 @@ final class SettingsPage implements ModuleInterface {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$notice  = sanitize_key( wp_unslash( $_GET['pa_notice'] ) );
 		$stored  = get_transient( 'precision_analytics_notice' );
-		$is_error = in_array( $notice, [ 'not_configured', 'test_fail' ], true );
+		$is_error = in_array( $notice, [ 'not_configured', 'test_fail', 'oauth_failed', 'oauth_no_client' ], true );
 
 		$message = match ( $notice ) {
 			'synced'         => __( 'Reports synced.', 'precision-analytics' ),
 			'test_ok'        => __( 'Connection succeeded — data is flowing.', 'precision-analytics' ),
 			'not_configured' => __( 'Reporting is not configured yet — set a property ID and credentials.', 'precision-analytics' ),
 			'test_fail'      => is_string( $stored ) && '' !== $stored ? $stored : __( 'Connection failed.', 'precision-analytics' ),
+			'oauth_connected'    => __( 'Google connected — reporting can now read your GA4 data.', 'precision-analytics' ),
+			'oauth_disconnected' => __( 'Google disconnected.', 'precision-analytics' ),
+			'oauth_no_client'    => __( 'Add an OAuth client ID and secret first.', 'precision-analytics' ),
+			'oauth_failed'       => is_string( $stored ) && '' !== $stored ? $stored : __( 'Google sign-in failed.', 'precision-analytics' ),
 			default          => '',
 		};
 		if ( is_string( $stored ) ) {
@@ -548,6 +602,154 @@ final class SettingsPage implements ModuleInterface {
 			$is_error ? 'error' : 'success',
 			esc_html( $message )
 		);
+	}
+
+	/**
+	 * OAuth client fields + the Connect/Disconnect control. Shown always (the
+	 * Authentication select governs which credentials are actually used), with
+	 * live status so it is obvious whether Google is connected.
+	 */
+	private function oauthRows(): void {
+		$auth      = new OAuthAuth( $this->options );
+		$const_id  = defined( 'PA_GA4_OAUTH_CLIENT_ID' );
+		$const_sec = defined( 'PA_GA4_OAUTH_CLIENT_SECRET' );
+
+		$this->help( __( 'Sign in with Google (OAuth)', 'precision-analytics' ) );
+
+		echo '<tr><td colspan="2"><div class="pa-inline-notice pa-callout">'
+			. esc_html__( 'One-time setup: in Google Cloud Console create an OAuth client (Application type: Web application), enable the Google Analytics Data API, and add this exact redirect URI:', 'precision-analytics' )
+			. ' <code>' . esc_html( OAuthAuth::redirectUri() ) . '</code>. '
+			. esc_html__( 'Then paste the client ID and secret below and click Connect. The account you sign in with must have access to the GA4 property.', 'precision-analytics' )
+			. '</div></td></tr>';
+
+		if ( $const_id ) {
+			echo '<tr><th scope="row">' . esc_html__( 'OAuth client ID', 'precision-analytics' ) . '</th><td><p class="description">'
+				. esc_html__( 'Loaded from the PA_GA4_OAUTH_CLIENT_ID constant in wp-config.php.', 'precision-analytics' ) . '</p></td></tr>';
+		} else {
+			$this->inputRow( __( 'OAuth client ID', 'precision-analytics' ), 'reporting.oauth_client_id', 'text', '1234567890-abc.apps.googleusercontent.com' );
+		}
+
+		if ( $const_sec ) {
+			echo '<tr><th scope="row">' . esc_html__( 'OAuth client secret', 'precision-analytics' ) . '</th><td><p class="description">'
+				. esc_html__( 'Loaded from the PA_GA4_OAUTH_CLIENT_SECRET constant in wp-config.php.', 'precision-analytics' ) . '</p></td></tr>';
+		} else {
+			$this->secretRow(
+				__( 'OAuth client secret', 'precision-analytics' ),
+				'reporting.oauth_client_secret',
+				__( 'Stored in the database. For better security, define PA_GA4_OAUTH_CLIENT_SECRET in wp-config.php instead.', 'precision-analytics' )
+			);
+		}
+
+		echo '<tr><th scope="row">' . esc_html__( 'Google connection', 'precision-analytics' ) . '</th><td>';
+		if ( $auth->isConnected() ) {
+			$when = $auth->connectedAt();
+			echo '<p><span class="dashicons dashicons-yes-alt" style="color:#5b8c3e" aria-hidden="true"></span> <strong>' . esc_html__( 'Connected', 'precision-analytics' ) . '</strong>';
+			if ( $when > 0 ) {
+				echo ' <span class="description">';
+				/* translators: %s: human-readable time difference. */
+				printf( esc_html__( '(authorized %s ago)', 'precision-analytics' ), esc_html( human_time_diff( $when ) ) );
+				echo '</span>';
+			}
+			echo '</p>';
+			$this->postButton( 'precision_analytics_oauth_disconnect', __( 'Disconnect Google', 'precision-analytics' ) );
+		} elseif ( $auth->hasClient() ) {
+			$this->postButton( 'precision_analytics_oauth_connect', __( 'Connect Google Analytics', 'precision-analytics' ), 'primary' );
+		} else {
+			echo '<p class="description">' . esc_html__( 'Save a client ID and secret above, then a Connect button appears here.', 'precision-analytics' ) . '</p>';
+		}
+		echo '</td></tr>';
+	}
+
+	/**
+	 * A write-only secret field: the stored value is never echoed into the
+	 * page. Submitting it empty keeps whatever is already saved (see sanitize).
+	 */
+	private function secretRow( string $label, string $path, string $help = '' ): void {
+		$id    = $this->id( $path );
+		$saved = '' !== trim( $this->options->str( $path ) );
+
+		echo '<tr><th scope="row"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label></th><td>';
+		echo '<input type="password" id="' . esc_attr( $id ) . '" name="' . esc_attr( $this->name( $path ) ) . '" value="" autocomplete="new-password" class="regular-text" placeholder="'
+			. esc_attr( $saved ? __( '•••••••• (saved — leave blank to keep)', 'precision-analytics' ) : '' ) . '" />';
+		if ( '' !== $help ) {
+			echo '<p class="description">' . esc_html( $help ) . '</p>';
+		}
+		echo '</td></tr>';
+	}
+
+	/** A small self-contained admin-post form button. */
+	private function postButton( string $action, string $label, string $type = 'secondary' ): void {
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline">';
+		wp_nonce_field( $action );
+		echo '<input type="hidden" name="action" value="' . esc_attr( $action ) . '" />';
+		submit_button( $label, $type, 'submit', false );
+		echo '</form>';
+	}
+
+	// --- OAuth handlers ---------------------------------------------------
+
+	public function handleOauthConnect(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( '-1' );
+		}
+		check_admin_referer( 'precision_analytics_oauth_connect' );
+
+		$auth = new OAuthAuth( $this->options );
+		if ( ! $auth->hasClient() ) {
+			$this->redirect( 'oauth_no_client' );
+		}
+		// Off-site to Google's consent screen — not wp_safe_redirect.
+		wp_redirect( $auth->beginAuthorization() ); // phpcs:ignore WordPress.Security.SafeRedirect
+		exit;
+	}
+
+	/** Google redirects back here with ?code&state (or ?error). */
+	public function handleOauthCallback(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( '-1' );
+		}
+
+		$auth = new OAuthAuth( $this->options );
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- state is the CSRF token here.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		$code  = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( ! $auth->verifyState( $state ) ) {
+			$this->failNotice( __( 'The Google sign-in could not be verified (expired or mismatched state). Please try again.', 'precision-analytics' ) );
+		}
+		if ( '' !== $error || '' === $code ) {
+			$this->failNotice(
+				'' !== $error
+					/* translators: %s: error code returned by Google. */
+					? sprintf( __( 'Google returned an error: %s', 'precision-analytics' ), $error )
+					: __( 'Google did not return an authorization code.', 'precision-analytics' )
+			);
+		}
+
+		$result = $auth->exchangeCode( $code );
+		if ( is_wp_error( $result ) ) {
+			$this->failNotice( $result->get_error_message() );
+		}
+		$this->redirect( 'oauth_connected' );
+	}
+
+	public function handleOauthDisconnect(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( '-1' );
+		}
+		check_admin_referer( 'precision_analytics_oauth_disconnect' );
+
+		( new OAuthAuth( $this->options ) )->disconnect();
+		$this->redirect( 'oauth_disconnected' );
+	}
+
+	/** Stash a message for the next screen and bounce back to Reporting. */
+	private function failNotice( string $message ): void {
+		set_transient( 'precision_analytics_notice', $message, 60 );
+		$this->redirect( 'oauth_failed' );
 	}
 
 	// --- Field renderers --------------------------------------------------

@@ -9,12 +9,18 @@ use OrchardGrove\PrecisionAnalytics\Settings\Options;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The custom-dimension registry. Maps each toggleable attribute to a GA4 event
+ * The custom-dimension registry. Maps each toggleable attribute to a GA4
  * parameter name + scope, and resolves the parameter map for a request.
  *
  * GA4 only makes a parameter queryable once a matching custom dimension exists
- * in the property — the Attributes settings tab reads REGISTRY to show the exact
- * names and scopes to register.
+ * in the property — the Attributes settings tab reads REGISTRY (and any
+ * per-attribute name overrides) to show the exact names and scopes to register.
+ * Overrides exist so a site can keep an existing dimension flowing — e.g. send
+ * the author as MonsterInsights' `author` instead of `post_author`.
+ *
+ * Scope matters for delivery, not just registration: event-scoped values ride
+ * on the config as event parameters, while user-scoped values must be sent as
+ * GA4 *user properties* or a user-scoped dimension stays "(not set)".
  */
 final class Dimensions {
 
@@ -35,11 +41,57 @@ final class Dimensions {
 		'published_year' => [ 'param' => 'published_year',  'scope' => 'event', 'label' => 'Published year' ],
 	];
 
+	/**
+	 * Parameter names other plugins registered in GA4, offered as a one-look
+	 * migration hint in the settings UI (attribute key => their name).
+	 */
+	public const MONSTERINSIGHTS_NAMES = [
+		'author'    => 'author',
+		'category'  => 'category',
+		'tags'      => 'tags',
+		'post_type' => 'post_type',
+	];
+
 	public function __construct( private Options $options ) {}
 
 	/**
+	 * A valid GA4 parameter name, or '' when the input is unusable. GA4 rules:
+	 * letters, digits, underscores; starts with a letter; at most 40 chars;
+	 * the google_/ga_/firebase_ prefixes are reserved.
+	 */
+	public static function sanitizeParam( string $raw ): string {
+		$raw = trim( $raw );
+		if ( ! preg_match( '/^[A-Za-z][A-Za-z0-9_]{0,39}$/', $raw ) ) {
+			return '';
+		}
+		if ( preg_match( '/^(google_|ga_|firebase_)/i', $raw ) ) {
+			return '';
+		}
+		return $raw;
+	}
+
+	/** The GA4 parameter name an attribute is sent as (override or default). */
+	public function paramName( string $key ): string {
+		$default  = self::REGISTRY[ $key ]['param'] ?? $key;
+		$override = self::sanitizeParam( $this->options->str( "attributes.params.$key" ) );
+		return '' !== $override ? $override : $default;
+	}
+
+	/** Registry scope for a resolved parameter name ('event' unless known user-scoped). */
+	public function scopeOf( string $param ): string {
+		foreach ( self::REGISTRY as $key => $meta ) {
+			if ( $this->paramName( $key ) === $param ) {
+				return $meta['scope'];
+			}
+		}
+		return 'event';
+	}
+
+	/**
 	 * The GA4 parameter map for the current request (param_name => value),
-	 * limited to enabled attributes with a non-empty value.
+	 * limited to enabled attributes with a non-empty value. Flat — event and
+	 * user scopes together — for consumers that don't distinguish (GTM's
+	 * dataLayer, the filter). Use collectScoped() for gtag delivery.
 	 *
 	 * @return array<string,string>
 	 */
@@ -51,7 +103,7 @@ final class Dimensions {
 			}
 			$value = $this->value( $key, $context );
 			if ( '' !== $value ) {
-				$params[ $meta['param'] ] = $value;
+				$params[ $this->paramName( $key ) ] = $value;
 			}
 		}
 		/**
@@ -60,6 +112,29 @@ final class Dimensions {
 		 * @param array<string,string> $params
 		 */
 		return apply_filters( 'precision_analytics/dimensions', $params, $context );
+	}
+
+	/**
+	 * The parameter map split by GA4 scope: `event` parameters and `user`
+	 * properties. Anything the filter added under an unknown name is treated
+	 * as event-scoped.
+	 *
+	 * @return array{event:array<string,string>,user:array<string,string>}
+	 */
+	public function collectScoped( Context $context ): array {
+		return $this->split( $this->collect( $context ) );
+	}
+
+	/**
+	 * @param array<string,string> $params
+	 * @return array{event:array<string,string>,user:array<string,string>}
+	 */
+	public function split( array $params ): array {
+		$scoped = [ 'event' => [], 'user' => [] ];
+		foreach ( $params as $param => $value ) {
+			$scoped[ $this->scopeOf( (string) $param ) ][ $param ] = $value;
+		}
+		return $scoped;
 	}
 
 	private function value( string $key, Context $context ): string {
