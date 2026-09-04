@@ -5,6 +5,7 @@ namespace OrchardGrove\PrecisionAnalytics\Tests;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;
+use OrchardGrove\PrecisionAnalytics\Plugin;
 use OrchardGrove\PrecisionAnalytics\Reporting\Sync;
 use OrchardGrove\PrecisionAnalytics\Settings\Options;
 use OrchardGrove\PrecisionAnalytics\Settings\SettingsPage;
@@ -52,6 +53,33 @@ final class EarlyTranslationTest extends TestCase {
 		$this->forbidTranslation();
 
 		( new SettingsPage( new Options() ) )->register();
+		$this->addToAssertionCount( 1 );
+	}
+
+	/**
+	 * The real entry point. Boots the whole plugin exactly as `plugins_loaded`
+	 * does on an admin request — every module constructed and registered, plus
+	 * the version-change branch (reschedule + cache clear) — with translation
+	 * forbidden throughout. Guards against a future early lookup being added
+	 * ANYWHERE on the boot path, not just the three places fixed in 0.5.2.
+	 */
+	public function testFullPluginBootDoesNotTranslate(): void {
+		$this->forbidTranslation();
+		Functions\when( 'is_admin' )->justReturn( true );          // Admin request: SettingsPage + Widget are built.
+		Functions\when( 'did_action' )->justReturn( 0 );           // Before init.
+		Functions\when( 'update_option' )->justReturn( true );
+		Functions\when( 'delete_option' )->justReturn( true );
+		Functions\when( 'add_shortcode' )->justReturn( null );
+		Functions\when( 'wp_next_scheduled' )->justReturn( false );
+		Functions\when( 'wp_schedule_event' )->justReturn( true );
+		Functions\when( 'wp_clear_scheduled_hook' )->justReturn( 0 );
+		// get_option() returns [] (see setUp), so the stored version never matches
+		// PRECISION_ANALYTICS_VERSION and the reschedule + Cache::clear branch runs.
+
+		// Plugin is a process-wide singleton with a booted flag — start fresh.
+		( new \ReflectionProperty( Plugin::class, 'instance' ) )->setValue( null, null ); // Private props are accessible via reflection since PHP 8.1.
+
+		Plugin::instance()->boot();
 		$this->addToAssertionCount( 1 );
 	}
 
