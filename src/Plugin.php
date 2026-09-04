@@ -45,7 +45,13 @@ final class Plugin {
 		}
 		$this->booted = true;
 
-		load_plugin_textdomain( 'precision-analytics', false, dirname( PRECISION_ANALYTICS_BASENAME ) . '/languages' );
+		// WordPress 6.7+ wants textdomains loaded on `init` or later.
+		add_action(
+			'init',
+			static function (): void {
+				load_plugin_textdomain( 'precision-analytics', false, dirname( PRECISION_ANALYTICS_BASENAME ) . '/languages' );
+			}
+		);
 
 		$o = $this->options;
 

@@ -35,9 +35,17 @@ final class Sync {
 	public static function addSchedule( array $schedules ): array {
 		$interval = max( 300, ( new Options() )->int( 'reporting.sync_interval', 900 ) );
 
+		// `cron_schedules` can fire before `init` (e.g. wp_schedule_event() during
+		// boot), where translating would trip WP 6.7+'s just-in-time notice —
+		// so only translate once init has run; the label is admin-only anyway.
+		$label = 'Precision Analytics sync interval';
+		if ( did_action( 'init' ) ) {
+			$label = __( 'Precision Analytics sync interval', 'precision-analytics' );
+		}
+
 		$schedules[ self::SCHEDULE ] = [
 			'interval' => $interval,
-			'display'  => __( 'Precision Analytics sync interval', 'precision-analytics' ),
+			'display'  => $label,
 		];
 		return $schedules;
 	}

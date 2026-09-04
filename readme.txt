@@ -4,7 +4,7 @@ Tags: google analytics, ga4, analytics, custom dimensions, consent mode
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.5.1
+Stable tag: 0.5.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,15 @@ No. This sampling controls how many visitors send data at all (to cut volume and
 noise). It is unrelated to the sampling GA4 applies inside its own reports.
 
 == Changelog ==
+
+= 0.5.2 =
+* Fixed the WordPress 6.7+ "_load_textdomain_just_in_time was called
+  incorrectly" notice (visible in the PHP error log on every admin request):
+  the settings-tab labels were translated when the plugin booted on
+  `plugins_loaded`, before the `init` hook. Labels are now translated lazily at
+  render time, the cron-schedule label no longer translates before `init`, and
+  the plugin textdomain loads on `init` per current WordPress guidance. No
+  functional change.
 
 = 0.5.1 =
 * Fixed the Reporting tab's Authentication dropdown still labelling OAuth

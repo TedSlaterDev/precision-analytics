@@ -22,11 +22,22 @@ final class SettingsPage implements ModuleInterface {
 	private const GROUP = 'precision_analytics_group';
 	private const PAGE  = 'precision-analytics';
 
-	/** @var array<string,string> */
-	private array $tabs;
+	/** @var array<string,string>|null Built lazily — see tabs(). */
+	private ?array $tabs = null;
 
-	public function __construct( private Options $options ) {
-		$this->tabs = [
+	public function __construct( private Options $options ) {}
+
+	/**
+	 * Tab labels, translated on first use at render time. This class is
+	 * constructed on `plugins_loaded`; translating in the constructor would
+	 * trigger WordPress 6.7+'s "_load_textdomain_just_in_time was called
+	 * incorrectly" notice on every admin request, because translation
+	 * functions must not run before `init`.
+	 *
+	 * @return array<string,string>
+	 */
+	private function tabs(): array {
+		return $this->tabs ??= [
 			'general'    => __( 'General', 'precision-analytics' ),
 			'attributes' => __( 'Attributes', 'precision-analytics' ),
 			'sampling'   => __( 'Sampling', 'precision-analytics' ),
@@ -96,7 +107,7 @@ final class SettingsPage implements ModuleInterface {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- tab is display-only.
 		$current = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
-		if ( ! isset( $this->tabs[ $current ] ) ) {
+		if ( ! isset( $this->tabs()[ $current ] ) ) {
 			$current = 'general';
 		}
 
@@ -125,7 +136,7 @@ final class SettingsPage implements ModuleInterface {
 			<?php $this->maybeNotice(); ?>
 
 			<nav class="pa-tabs" aria-label="<?php esc_attr_e( 'Precision Analytics settings', 'precision-analytics' ); ?>">
-				<?php foreach ( $this->tabs as $slug => $label ) : ?>
+				<?php foreach ( $this->tabs() as $slug => $label ) : ?>
 					<a href="<?php echo esc_url( add_query_arg( [ 'page' => self::PAGE, 'tab' => $slug ], admin_url( 'admin.php' ) ) ); ?>"
 						class="pa-tab <?php echo $slug === $current ? 'is-active' : ''; ?>"<?php echo $slug === $current ? ' aria-current="page"' : ''; ?>>
 						<span class="dashicons dashicons-<?php echo esc_attr( $icons[ $slug ] ?? 'admin-generic' ); ?>" aria-hidden="true"></span>
